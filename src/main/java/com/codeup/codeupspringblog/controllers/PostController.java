@@ -1,34 +1,33 @@
 package com.codeup.codeupspringblog.controllers;
+
+
+import models.Post;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
-@RequestMapping("/posts")
 public class PostController {
+    private long id;
 
-    @GetMapping
-    @ResponseBody
-    public String index() {
-        return "Posts index page";
+    @GetMapping("/post")
+    public String post(Model model) {
+        model.addAttribute("post", new Post("Hello", "Hello World"));
+        return "/posts/index";
     }
 
-    @GetMapping("/{id}")
-    @ResponseBody
-    public String view(@PathVariable int id) {
-        return "Viewing post with ID: " + id;
-
-//        http://localhost:8080/posts/123
+    @GetMapping("/posts")
+    public String posts(Model model) {
+        List<Post> posts = new ArrayList<>();
+        posts.add(new Post("Hello", "Hello World"));
+        posts.add(new Post("Hello Part 2", "Hello World Again :)"));
+        model.addAttribute("posts", posts);
+        return "/posts/show";
     }
 
-    @GetMapping("/create")
-    @ResponseBody
-    public String createForm() {
-        return "Viewing the form for creating a post";
-    }
-
-    @PostMapping("/create")
-    @ResponseBody
-    public String create() {
-        return "Creating a new post";
-    }
 }
+
+
