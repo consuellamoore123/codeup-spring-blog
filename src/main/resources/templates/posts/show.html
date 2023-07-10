@@ -6,8 +6,8 @@
 </head>
 <body>
 <div th:each="post : ${posts}">
-  <p th:text="${post.getTitle()}" />
-  <p th:text="${post.getBody()}" />
+  <h1 th:text="${post.getTitle()}"></h1>
+  <h1 th:text="${post.getBody()}"></h1>
 </div>
 </body>
 </html>

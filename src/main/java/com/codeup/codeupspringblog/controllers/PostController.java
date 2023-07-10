@@ -1,33 +1,67 @@
 package com.codeup.codeupspringblog.controllers;
 
 
-import models.Post;
+import com.codeup.codeupspringblog.models.EmailService;
+import com.codeup.codeupspringblog.models.Post;
+import com.codeup.codeupspringblog.models.User;
+import com.codeup.codeupspringblog.repositories.PostRepository;
+import com.codeup.codeupspringblog.repositories.UserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+@AllArgsConstructor
 
 @Controller
+@RequestMapping("/posts")
 public class PostController {
-    private long id;
+    private PostRepository postDao;
+    private UserRepository userDao;
+    private EmailService emailService;
 
-    @GetMapping("/post")
-    public String post(Model model) {
-        model.addAttribute("post", new Post("Hello", "Hello World"));
+    @GetMapping("")
+    public String posts(Model model){
+        List<Post> posts = postDao.findAll();
+
+        model.addAttribute("posts",posts);
         return "/posts/index";
     }
 
-    @GetMapping("/posts")
-    public String posts(Model model) {
-        List<Post> posts = new ArrayList<>();
-        posts.add(new Post("Hello", "Hello World"));
-        posts.add(new Post("Hello Part 2", "Hello World Again :)"));
-        model.addAttribute("posts", posts);
+    @GetMapping("/{id}")
+    public String showSinglePost(@PathVariable Long id, Model model){
+        // find the desired post in the db
+        Optional<Post> optionalPost = postDao.findById(id);
+        if(optionalPost.isEmpty()) {
+            System.out.printf("Post with id " + id + " not found!");
+            return "home";
+        }
+
+        // if we get here, then we found the post. so just open up the optional
+        model.addAttribute("post", optionalPost.get());
         return "/posts/show";
     }
 
+    @GetMapping("/create")
+    public String showCreate() {
+        return "/posts/create";
+    }
+
+    @PostMapping("/create")
+    public String doCreate(@RequestParam String title, @RequestParam String body) {
+        Post post = new Post();
+        post.setTitle(title);
+        post.setBody(body);
+
+        // TODO: use user id 1 for now. change later to currently logged in user
+        User loggedInUser = userDao.findById(1L).get();
+        post.setCreator(loggedInUser);
+        emailService.prepareAndSend(post,title,body);
+        postDao.save(post);
+
+        return "redirect:/posts";
+    }
 }
-
-
