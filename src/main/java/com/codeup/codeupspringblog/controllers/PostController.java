@@ -46,22 +46,56 @@ public class PostController {
     }
 
     @GetMapping("/create")
-    public String showCreate() {
+    public String showCreateForm(Model model) {
+        model.addAttribute("post", new Post());
         return "/posts/create";
     }
 
     @PostMapping("/create")
-    public String doCreate(@RequestParam String title, @RequestParam String body) {
-        Post post = new Post();
-        post.setTitle(title);
-        post.setBody(body);
+    public String createPost(@ModelAttribute("post") Post post) {
+        savePost(post);
+        return "redirect:/posts";
+    }
 
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        Optional<Post> optionalPost = postDao.findById(id);
+        if (optionalPost.isEmpty()) {
+            System.out.printf("Post with id " + id + " not found!");
+            return "/home";
+        }
+
+        model.addAttribute("post", optionalPost.get());
+        return "/posts/edit";
+    }
+
+    @PostMapping("/{id}/edit")
+    public String updatePost(@PathVariable Long id, @ModelAttribute("post") Post updatedPost) {
+        Optional<Post> optionalPost = postDao.findById(id);
+        if (optionalPost.isEmpty()) {
+            System.out.printf("Post with id " + id + " not found!");
+            return "/home";
+        }
+
+        Post existingPost = optionalPost.get();
+        existingPost.setTitle(updatedPost.getTitle());
+        existingPost.setBody(updatedPost.getBody());
+        savePost(existingPost);
+
+        return "redirect:/posts/" + id;
+    }
+
+
+//
+
+
+
+    private void savePost(Post post) {
         // TODO: use user id 1 for now. change later to currently logged in user
         User loggedInUser = userDao.findById(1L).get();
         post.setCreator(loggedInUser);
-        emailService.prepareAndSend(post,title,body);
+        emailService.prepareAndSend(post, post.getTitle(), post.getBody());
         postDao.save(post);
-
-        return "redirect:/posts";
     }
+
 }
