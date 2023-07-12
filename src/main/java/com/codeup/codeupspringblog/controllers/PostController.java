@@ -6,6 +6,7 @@ import com.codeup.codeupspringblog.models.Post;
 import com.codeup.codeupspringblog.models.User;
 import com.codeup.codeupspringblog.repositories.PostRepository;
 import com.codeup.codeupspringblog.repositories.UserRepository;
+import com.codeup.codeupspringblog.security.AuthBuddy;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -25,6 +26,9 @@ public class PostController {
 
     @GetMapping("")
     public String posts(Model model){
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        model.addAttribute("loggedInUser", loggedInUser);
+
         List<Post> posts = postDao.findAll();
 
         model.addAttribute("posts",posts);
@@ -32,7 +36,10 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public String showSinglePost(@PathVariable Long id, Model model){
+    public String showSinglePost(@PathVariable Long id, Model model) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        model.addAttribute("loggedInUser", loggedInUser);
+
         // find the desired post in the db
         Optional<Post> optionalPost = postDao.findById(id);
         if(optionalPost.isEmpty()) {
@@ -46,56 +53,38 @@ public class PostController {
     }
 
     @GetMapping("/create")
-    public String showCreateForm(Model model) {
-        model.addAttribute("post", new Post());
+    public String showCreate(Model model) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        if(loggedInUser.getId() == 0) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("loggedInUser", loggedInUser);
+
+        model.addAttribute("newPost", new Post());
         return "/posts/create";
     }
 
     @PostMapping("/create")
-    public String createPost(@ModelAttribute("post") Post post) {
-        savePost(post);
+    public String doCreate(@ModelAttribute Post post) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        if(loggedInUser.getId() == 0) {
+            return "redirect:/login";
+        }
+
+        post.setCreator(loggedInUser);
+        postDao.save(post);
+
         return "redirect:/posts";
     }
 
     @GetMapping("/{id}/edit")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        Optional<Post> optionalPost = postDao.findById(id);
-        if (optionalPost.isEmpty()) {
-            System.out.printf("Post with id " + id + " not found!");
-            return "/home";
-        }
+    public String showEdit(@PathVariable Long id, Model model) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        model.addAttribute("loggedInUser", loggedInUser);
 
-        model.addAttribute("post", optionalPost.get());
-        return "/posts/edit";
+        Post postToEdit = postDao.getReferenceById(id);
+        model.addAttribute("newPost", postToEdit);
+        return "/posts/create";
     }
-
-    @PostMapping("/{id}/edit")
-    public String updatePost(@PathVariable Long id, @ModelAttribute("post") Post updatedPost) {
-        Optional<Post> optionalPost = postDao.findById(id);
-        if (optionalPost.isEmpty()) {
-            System.out.printf("Post with id " + id + " not found!");
-            return "/home";
-        }
-
-        Post existingPost = optionalPost.get();
-        existingPost.setTitle(updatedPost.getTitle());
-        existingPost.setBody(updatedPost.getBody());
-        savePost(existingPost);
-
-        return "redirect:/posts/" + id;
-    }
-
-
-//
-
-
-
-    private void savePost(Post post) {
-        // TODO: use user id 1 for now. change later to currently logged in user
-        User loggedInUser = userDao.findById(1L).get();
-        post.setCreator(loggedInUser);
-        emailService.prepareAndSend(post, post.getTitle(), post.getBody());
-        postDao.save(post);
-    }
-
 }
