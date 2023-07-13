@@ -4,11 +4,29 @@
 <head>
     <header th:insert="partials/header :: head"></header>
     <title>Create Post</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+
+    <style>
+        body {
+
+            background-image: url("/static/wallpaperflare-cropped.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+    </style>
+
+
+
+
 </head>
 
 <body>
+
 <nav th:replace="partials/navbar :: navbar">
 </nav>
+
+
 
 <div class="container-fluid">
     <h1 th:text="${title}">insert title here</h1>
